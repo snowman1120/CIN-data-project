@@ -110,7 +110,7 @@ class Document:
 
         for idx, img in enumerate(self.pages):
             try:
-                if idx <4:
+                if idx <3:
                     logger.debug(f"Reading page {idx + 1} out of {len(self.pages)}")
                     page = Page(img, page_num, self.img_name, self.output_dir, self.head_check, self.digit_doc[idx])
                     box, text = page.parse_page()
@@ -124,7 +124,7 @@ class Document:
                 if str(e) == "02":## when heading page is not existed in pdf.
                     error = str(e)
                     err = "Heading page is not existed (not high_y)"  
-                    break              
+                    break
                 elif str(e) == "03":## Style of table is violated
                     err = "Error in getting index"
                     error = str(e)
@@ -396,15 +396,16 @@ class Page:
         
         for cnt, te in enumerate(text):
             te = te.lower()
-            # if ('sl' in te or te.strip() == 's.' or te.strip() == 's') and sl:
-            #     sl, index[0] =False, xc[cnt]
+            if ('sl' in te or te.strip() == 's.' or te.strip() == 's' or '.no' in te or te=='no') and sl:
+                sl, index[0] =False, xc[cnt]
             if 'cin' in te and cin:
                 cin, index[1] = False, xc[cnt]
             elif ("name" in te) and name:
                 name, index[2] = False, xc[cnt]
             elif (te.strip() == "pan" or ("pan" in te and len(te)>9)) and pan:
                 pan, index[3] = False, xc[cnt]
-        index[0] = 10000
+
+        # index[0] = 10000
                 
         flag = [False, cin, name, pan]
         return index, flag   
@@ -638,9 +639,11 @@ class Page:
                 if col[0] < ind < col[1]: 
                     condi_1 = True
                     break
-            condi_2 = col[0] < min([v for v in index if v > 0])
-            if condi_1 or condi_2:
+            # condi_2 = col[0] < min([v for v in index if v > 0])
+            if condi_1:# or condi_2:
                 self.cols.append(col)
+        if index[0] == -1:
+            self.cols.insert(0, new_cols[0])
         if page_digit: self.get_digit_cen()
 
         return rows, cols
@@ -966,8 +969,8 @@ class Page:
         if not self.headpage_checking:
             global page_digit
             page_digit = self.text_detection(digit)
-        if self.headpage_checking:            
+        if self.headpage_checking:
             self.getting_table()
-            box, text = self.box_text_detection() 
-            box, text = self.reconstruction(box, text) 
+            box, text = self.box_text_detection()
+            box, text = self.reconstruction(box, text)
         return box, text
